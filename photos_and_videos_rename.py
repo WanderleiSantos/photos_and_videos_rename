@@ -8,19 +8,29 @@ import shutil
 register_heif_opener()
 
 caminho = askdirectory(title="Selecione uma pasta")
+def listar_arquivos(pasta):
+    lista_arquivos = []
 
-lista_arquivos = os.listdir(caminho)
+    for diretorio_atual, subdiretorios, arquivos in os.walk(pasta):
+        for arquivo in arquivos:
+            caminho_completo = os.path.join(diretorio_atual, arquivo)
+            local_arquivo = os.path.relpath(caminho_completo, pasta)
+            lista_arquivos.append(local_arquivo)
+
+    return lista_arquivos
+
+arquivos_encontrados = listar_arquivos(caminho)
 
 locais = {
     "photos": [".png", ".jpg", ".heic", ".jpeg"],
     "videos": [".mp4", ".mov", ".avi", ".m4v"]
 }
 
-for arquivo in lista_arquivos:
+for arquivo in arquivos_encontrados:
     nome, extensao = os.path.splitext(f"{caminho}/{arquivo}")
     for pasta in locais:
-        if extensao in locais[pasta]:
-            if pasta == "imagens":
+        if extensao.lower() in locais[pasta]:
+            if pasta == "photos":
                 img = Image.open(f"{caminho}/{arquivo}")
                 img_exif = img.getexif()
                 if img_exif.get(306) is None:
