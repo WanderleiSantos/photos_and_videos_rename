@@ -7,7 +7,6 @@ import shutil
 
 register_heif_opener()
 
-caminho = askdirectory(title="Selecione uma pasta")
 def listar_arquivos(pasta):
     lista_arquivos = []
 
@@ -19,7 +18,40 @@ def listar_arquivos(pasta):
 
     return lista_arquivos
 
-arquivos_encontrados = listar_arquivos(caminho)
+
+def obter_nome_novo_arquivo(caminho_origem, arquivo, pasta_sync):
+    caminho_arquivo = os.path.join(caminho_origem, arquivo)
+    data_modificacao = datetime.datetime.fromtimestamp(os.path.getmtime(caminho_arquivo))
+    if pasta_sync == "photos":
+        return retorna_novo_nome_arquivo_foto(caminho_arquivo, data_modificacao)
+    else:
+        return retorna_novo_nome_arquivo_video(data_modificacao)
+
+
+def retorna_novo_nome_arquivo_foto(caminho_arquivo, data_modificacao):
+    img = Image.open(caminho_arquivo)
+    img_exif = img.getexif()
+
+    if img_exif and img_exif.get(306):
+        novo_arquivo = "IMG-" + img_exif.get(306).strip().replace(':', '-').replace(' ', '_')
+        data_str = img_exif.get(306)
+    else:
+        novo_arquivo = "IMG-" + data_modificacao.strftime("%Y-%m-%d_%H-%M-%S")
+        data_str = data_modificacao.strftime("%Y-%m-%d %H:%M:%S")
+    year_folder = data_str[:4]
+
+    return novo_arquivo, year_folder
+
+def retorna_novo_nome_arquivo_video(data_modificacao):
+    novo_arquivo = "VID-" + data_modificacao.strftime("%Y-%m-%d_%H-%M-%S")
+    year_folder = data_modificacao.strftime("%Y")
+
+    return novo_arquivo, year_folder
+
+print("Processando arquivos...")
+
+caminho_origem = askdirectory(title="Selecione uma pasta")
+arquivos_encontrados = listar_arquivos(caminho_origem)
 
 locais = {
     "photos": [".png", ".jpg", ".heic", ".jpeg"],
@@ -27,31 +59,16 @@ locais = {
 }
 
 for arquivo in arquivos_encontrados:
-    nome, extensao = os.path.splitext(f"{caminho}/{arquivo}")
-    for pasta in locais:
-        if extensao.lower() in locais[pasta]:
-            if pasta == "photos":
-                img = Image.open(f"{caminho}/{arquivo}")
-                img_exif = img.getexif()
-                if img_exif.get(306) is None:
-                   novo_arquivo = "IMG-" + datetime.datetime.fromtimestamp(os.path.getmtime(f"{caminho}/{arquivo}")).strftime("%Y-%m-%d_%H-%M-%S")
-                   datefolder = datetime.datetime.fromtimestamp(os.path.getmtime(f"{caminho}/{arquivo}")).strftime("%Y")
-                else:
-                   novo_arquivo = "IMG-" + img_exif.get(306).strip().replace(':','-').replace(' ', '_')
-                   datastr = img_exif.get(306)
-                   datefolder = datastr[0:4]
-            else:
-                novo_arquivo = "VID-" + datetime.datetime.fromtimestamp(os.path.getmtime(f"{caminho}/{arquivo}")).strftime("%Y-%m-%d_%H-%M-%S")
-                datefolder =  datetime.datetime.fromtimestamp(os.path.getmtime(f"{caminho}/{arquivo}")).strftime("%Y")
-            if not os.path.exists(f"{caminho}/{pasta}/{datefolder}"):
-                os.makedirs(f"{caminho}/{pasta}/{datefolder}")
-            shutil.copy(f"{caminho}/{arquivo}",
-                      f"{caminho}/{pasta}/{datefolder}/{novo_arquivo}{extensao}")
+    nome_arquivo, extensao = os.path.splitext(arquivo)
+    for pasta, extensoes in locais.items():
+        if extensao.lower() in extensoes:
+            novo_arquivo, year_folder = obter_nome_novo_arquivo(caminho_origem, arquivo, pasta)
+            destino = os.path.join(caminho_origem, pasta, year_folder)
+            if not os.path.exists(destino):
+                os.makedirs(destino)
+                print(f"=== Criando pasta  {destino} ===")
+            destino_arquivo = os.path.join(destino, f"{novo_arquivo}{extensao}")
+            shutil.copy(os.path.join(caminho_origem, arquivo), destino_arquivo)
+            print(f"Arquivo {arquivo} copiado para {destino_arquivo}")
 
-
-
-
-#print(novo_arquivo)
-#print(extensao)
-#print(f"{caminho}/{pasta}/{novo_arquivo}{extensao}")
-#"IMG-" + datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+print("Processamento concluído!")
