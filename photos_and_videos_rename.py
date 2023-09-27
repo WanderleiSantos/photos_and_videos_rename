@@ -48,27 +48,34 @@ def retorna_novo_nome_arquivo_video(data_modificacao):
 
     return novo_arquivo, year_folder
 
-print("Processando arquivos...")
 
-caminho_origem = askdirectory(title="Selecione uma pasta")
-arquivos_encontrados = listar_arquivos(caminho_origem)
 
-locais = {
-    "photos": [".png", ".jpg", ".heic", ".jpeg"],
-    "videos": [".mp4", ".mov", ".avi", ".m4v"]
-}
+def main():
+    print("Processando arquivos...")
+    caminho_origem = askdirectory(title="Selecione uma pasta")
+    caminho_destino = "C:/Users/Wanderlei Santos/OneDrive/Imagens/PhotoSync"
+    arquivos_encontrados = listar_arquivos(caminho_origem)
 
-for arquivo in arquivos_encontrados:
-    nome_arquivo, extensao = os.path.splitext(arquivo)
-    for pasta, extensoes in locais.items():
-        if extensao.lower() in extensoes:
-            novo_arquivo, year_folder = obter_nome_novo_arquivo(caminho_origem, arquivo, pasta)
-            destino = os.path.join(caminho_origem, pasta, year_folder)
-            if not os.path.exists(destino):
-                os.makedirs(destino)
-                print(f"=== Criando pasta  {destino} ===")
-            destino_arquivo = os.path.join(destino, f"{novo_arquivo}{extensao}")
-            shutil.copy(os.path.join(caminho_origem, arquivo), destino_arquivo)
-            print(f"Arquivo {arquivo} copiado para {destino_arquivo}")
+    locais = {
+        "photos": [".png", ".jpg", ".heic", ".jpeg"],
+        "videos": [".mp4", ".mov", ".avi", ".m4v"]
+    }
 
-print("Processamento concluído!")
+    for arquivo in arquivos_encontrados:
+        nome_arquivo, extensao = os.path.splitext(arquivo)
+        for pasta, extensoes in locais.items():
+            if extensao.lower() in extensoes:
+                novo_arquivo, year_folder = obter_nome_novo_arquivo(caminho_origem, arquivo, pasta)
+                destino = os.path.join(caminho_destino, pasta, year_folder)
+                print(destino)
+                if not os.path.exists(destino):
+                    os.makedirs(destino)
+                    print(f"=== Criando pasta  {destino} ===")
+                destino_arquivo = os.path.join(destino, f"{novo_arquivo}{extensao}")
+                shutil.copy(os.path.join(caminho_origem, arquivo), destino_arquivo)
+                print(f"Arquivo {arquivo} copiado para {destino_arquivo}")
+
+    print("Processamento concluído!")
+
+if __name__ == "__main__":
+    main()
